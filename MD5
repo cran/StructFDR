@@ -1,0 +1,13 @@
+156d1cdb702865cfed113aee4e96768c *DESCRIPTION
+6cf93ad98deccc84d944a7ff3e8480a9 *NAMESPACE
+14e81cfff92117959047af6787aafbe5 *R/StructFDR.R
+1fc2adf1d2b2f605bff18924362ffd91 *man/AdjStats.Rd
+2c1e511474103625de5a4fd0599fc0fc *man/EstHyper.Rd
+8a683f58fb4bb572fdedab783ece99ed *man/Initialize.corHerit.Rd
+6e6fa5fbe5f33fedf209aee209cf73c5 *man/StructFDR-package.Rd
+b60419c94b221068eafa8aaa620b39fe *man/StructFDR.Rd
+7f0e9a25d2dbf20f31dc61c1aa89c760 *man/TreeFDR.Rd
+3b830669d74fc425da6e82ed19a8112c *man/Ztransform.Rd
+b73ae435aec141e324d5b5e9688aa9b9 *man/coef.corHerit.Rd
+c36411b4909872f331730f46b24619f7 *man/corHerit.Rd
+64458ba853d0358a0079e5b008278468 *man/corMatrix.corHerit.Rd

@@ -1,0 +1,8 @@
+importFrom("ape", "rcoal")
+importFrom("cluster", "pam")
+importFrom("stats", "coef", "cophenetic", "formula", "p.adjust", "qnorm", "sd")
+import(nlme)
+S3method("Initialize", "corHerit")
+S3method("corMatrix", "corHerit")
+S3method("coef", "corHerit")
+exportPattern("^[[:alpha:]]+")
