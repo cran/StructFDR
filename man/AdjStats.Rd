@@ -6,7 +6,7 @@
 AdjStats(y, V, k, mu, fudge=0.005)
 }
 \arguments{
-  \item{y}{a vector of unadjusted z-values}
+  \item{y}{a vector or a matrix of unadjusted z-values}
 
   \item{V}{a correlation matrix defined based on the prior structure}
 
@@ -17,7 +17,7 @@ AdjStats(y, V, k, mu, fudge=0.005)
   \item{fudge}{a small numeric value added to the diagonal of the correlation matrix to improve stability}
 
 }
-\value{a vector of adjusted z-values}
+\value{a vector or a matrix of adjusted z-values}
 
 \references{
 %% ~put references to the literature/web site here ~

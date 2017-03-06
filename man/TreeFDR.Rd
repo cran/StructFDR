@@ -12,7 +12,8 @@ statistic based on posterior mean is used for permutation-based FDR control. By 
 improve the statistical power of detecting associated  bacterial species while controlling the FDR at desired levels. 
 }
 \usage{
-TreeFDR(X, Y, tree, test.func, perm.func, eff.sign = TRUE, B = 20, c.cutoff = 0.001, ...)
+TreeFDR(X, Y, tree, test.func, perm.func, eff.sign = TRUE, B = 20, q.cutoff = 0.5,
+       alpha = 1, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -44,13 +45,18 @@ information.
 }
   \item{B}{
 %%     ~~Describe \code{B} here~~
-number of the permutations.  The default is 20.
+the number of permutations.  The default is 20. If computation time is not a big concern, \code{B=100} is suggested to achieve excellent reproducibility between different runs.
 }
-  \item{c.cutoff}{
+  \item{q.cutoff}{
 %%     ~~Describe \code{c.cutoff} here~~
-a threshold to which the standard deviation of the moderated statistic is compared. If the standard deviation is smaller than the threshold,
-it indicates potential "over-adjustment". The standard BH procedure will be used.
+the quantile cutoff to determine the feature sets to estimate the number of false positives under the null. This cutoff is to protect the signal part of the distributions. The default is 0.5.
 }
+
+  \item{alpha}{
+%%     ~~Describe \code{c.cutoff} here~~
+the exponent applied to the distance matrix. Large values have more smoothing effects for closely related species. The default is 1.
+}
+
 
   \item{...}{
 %%     ~~Describe \code{c.cutoff} here~~
@@ -68,7 +74,7 @@ further arguments such as covariates to be passed to \code{test.func}
 \item{p.unadj }{raw p-values.}
 \item{z.adj }{moderated z-values. The scale may be different from the raw z-values.}
 \item{z.unadj }{raw z-values.}
-\item{k, rho }{the estimates of the hyperparameters.  The magnitude indicates the informativeness of the prior structure.}
+\item{k, rho }{the estimates of the hyperparameters.  The values indicate the informativeness of the prior structure.}
 
 }
 
