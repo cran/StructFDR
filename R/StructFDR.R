@@ -98,21 +98,30 @@ PermFDR <- function (F0, Fp, null.ind) {
 	F0 <- F0[ord]
 	perm.no <- ncol(Fp)
 	Fp <- as.vector(Fp)
+	
+	pct.non.na <- mean(!is.na(Fp))
+	
 	Fp <- Fp[!is.na(Fp)]
 	Fp <- sort(c(Fp, F0), decreasing = F)
-
+	
 	n <- length(Fp)
 	m <- length(F0)
 	
 	FPN <- (n + 1) - match(F0, Fp) - 1:m
-	p.adj.fdr <- FPN / pct / perm.no / (1:m)
-		
+	# Handle identical F0 situations
+	FPN <- cummax(FPN)
+	
+	p.adj.fdr <- FPN / pct.non.na / pct / perm.no / (1:m)
+	
 	p.adj.fdr <- pmin(1, rev(cummin(rev(p.adj.fdr))))[order(ord)]
 }
 
-
 # Compute tree-based FDR control	
-TreeFDR <- function (X, Y, tree, test.func, perm.func, eff.sign = TRUE,  B = 20,  q.cutoff = 0.5, alpha = 1, ...) {
+TreeFDR <- function (X, Y, tree, test.func, perm.func, eff.sign = TRUE,  B = 20,  q.cutoff = 0.5, alpha = 1,
+		adaptive = c('Fisher', 'Overlap'), alt.FDR = c('BH', 'Permutation'), ...) {
+	
+	adaptive <- match.arg(adaptive)
+	alt.FDR <- match.arg(alt.FDR)
 	
 	# Make sure the rows of X and tree tips are labeled to avoid error
 	if (is.null(rownames(X)) | is.null(tree$tip.label)) {
@@ -164,13 +173,20 @@ TreeFDR <- function (X, Y, tree, test.func, perm.func, eff.sign = TRUE,  B = 20,
 		z.perm2[!null.ind, i] <- z.obs[!null.ind]
 	}
 	
-	cat('Perform ordinary permutation-based FDR control ...\n')
-	if (eff.sign == TRUE) {
-		p.adj0 <- PermFDR(abs(z.obs), abs(z.perm), rep(TRUE, length(z.obs)))
-	} else {
-		p.adj0 <- PermFDR(z.obs, z.perm, rep(TRUE, length(z.obs)))
+	if (alt.FDR == 'Permutation') {
+		cat('Perform ordinary permutation-based FDR control ...\n')
+		if (eff.sign == TRUE) {
+			p.adj0 <- PermFDR(abs(z.obs), abs(z.perm), rep(TRUE, length(z.obs)))
+		} else {
+			p.adj0 <- PermFDR(z.obs, z.perm, rep(TRUE, length(z.obs)))
+		}
 	}
 	
+	if (alt.FDR == 'BH') {
+		cat('Perform ordinary BH-based FDR control ...\n')
+		p.adj0 <- p.adjust(test.obs$p.value, 'fdr')
+		
+	}
 	
 	cat("Estimating hyperparameter ... \n")
 	error <- try(obj <- EstHyper(y = z.obs, D = D))
@@ -197,23 +213,44 @@ TreeFDR <- function (X, Y, tree, test.func, perm.func, eff.sign = TRUE,  B = 20,
 		
 		p.adj <- PermFDR(stat.o, stat.p, null.ind)			
 		
-		# These cutoffs are used emprically
-		fdr.cutoff <- 0.1
-		pct.cutoff <- 0.5
-		
-		ind0 <- p.adj0 <= fdr.cutoff
-		ind <- p.adj <= fdr.cutoff
-		
-		if (sum(p.adj[ind0] <= fdr.cutoff) <  pct.cutoff * sum(ind0)) {
+		# Power loss check
+		if (adaptive == 'Overlap') {
+			fdr.cutoff <- 0.2
+			pct.cutoff <- 0.5
 			
-			# Over-adjustment checking
-			cat('Potential over-adjustment! Ordinary permutation-based FDR control will be used!\n')
-			p.adj <- p.adj0
-			k <- NULL
-			rho <- NULL
-			z.adj <- NULL
-		}
+			ind0 <- p.adj0 <= fdr.cutoff
+			ind <- p.adj <= fdr.cutoff
+			
+			if (sum(p.adj[ind0] <= fdr.cutoff) <  pct.cutoff * sum(ind0)) {
+				
+				# Over-adjustment checking
+				cat('Potential over-adjustment! Alternative FDR control will be used!\n')
+				p.adj <- p.adj0
+				k <- NULL
+				rho <- NULL
+				z.adj <- NULL
+			}
+		} 
 		
+		if (adaptive == 'Fisher') {
+			# These cutoffs are used emprically
+			fdr.cutoff <- 0.2
+			
+			ind0 <- p.adj0 <= fdr.cutoff
+			ind <- p.adj <= fdr.cutoff
+			
+			n <- nrow(X)
+			test.p <- fisher.test(matrix(c(sum(ind), sum(ind0), n - sum(ind), n - sum(ind0)), 2, 2), alternative = 'less')$p.value
+			
+			if (test.p <= 0.05) {
+				# Over-adjustment checking
+				cat('Potential over-adjustment! Alternative FDR control will be used!\n')
+				p.adj <- p.adj0
+				k <- NULL
+				rho <- NULL
+				z.adj <- NULL
+			} 
+		}
 	}
 	
 	cat("Done!\n")
@@ -221,9 +258,10 @@ TreeFDR <- function (X, Y, tree, test.func, perm.func, eff.sign = TRUE,  B = 20,
 	return(list(p.adj = p.adj,  p.unadj = test.obs$p.value, z.adj = z.adj, z.unadj = z.obs, k = k, rho = rho))
 }
 
+
 # Compute tree-based FDR control	
-StructFDR <- function (X, Y, D, test.func, perm.func, eff.sign = TRUE,  B = 20,  q.cutoff = 0.5, alpha = 1, ...) {
-	
+StructFDR <- function (X, Y, D, test.func, perm.func, eff.sign = TRUE,  B = 20,  q.cutoff = 0.5, alpha = 1,
+		adaptive = c('Fisher', 'Overlap'), alt.FDR = c('BH', 'Permutation'), ...) {
 	# Make sure the rows of X and tree tips are labeled to avoid error
 	if (is.null(rownames(X)) | is.null(colnames(D))) {
 		warning('Both the data matrix and the distance matrix should have labels (rownames) to avoid potential errors!\n')
@@ -237,6 +275,7 @@ StructFDR <- function (X, Y, D, test.func, perm.func, eff.sign = TRUE,  B = 20, 
 		}
 	}
 	
+	D <- D ^ alpha
 	
 	if (!is.null(rownames(X)) & !is.null(colnames(D))) {
 		D <- D[rownames(X), rownames(X)]
@@ -272,13 +311,20 @@ StructFDR <- function (X, Y, D, test.func, perm.func, eff.sign = TRUE,  B = 20, 
 		z.perm2[!null.ind, i] <- z.obs[!null.ind]
 	}
 	
-	cat('Perform ordinary permutation-based FDR control ...\n')
-	if (eff.sign == TRUE) {
-		p.adj0 <- PermFDR(abs(z.obs), abs(z.perm), rep(TRUE, length(z.obs)))
-	} else {
-		p.adj0 <- PermFDR(z.obs, z.perm, rep(TRUE, length(z.obs)))
+	if (alt.FDR == 'Permutation') {
+		cat('Perform ordinary permutation-based FDR control ...\n')
+		if (eff.sign == TRUE) {
+			p.adj0 <- PermFDR(abs(z.obs), abs(z.perm), rep(TRUE, length(z.obs)))
+		} else {
+			p.adj0 <- PermFDR(z.obs, z.perm, rep(TRUE, length(z.obs)))
+		}
 	}
 	
+	if (alt.FDR == 'BH') {
+		cat('Perform ordinary BH-based FDR control ...\n')
+		p.adj0 <- p.adjust(test.obs$p.value, 'fdr')
+		
+	}
 	
 	cat("Estimating hyperparameter ... \n")
 	error <- try(obj <- EstHyper(y = z.obs, D = D))
@@ -305,21 +351,43 @@ StructFDR <- function (X, Y, D, test.func, perm.func, eff.sign = TRUE,  B = 20, 
 		
 		p.adj <- PermFDR(stat.o, stat.p, null.ind)			
 		
-		# These cutoffs are used emprically
-		fdr.cutoff <- 0.1
-		pct.cutoff <- 0.5
-		
-		ind0 <- p.adj0 <= fdr.cutoff
-		ind <- p.adj <= fdr.cutoff
-		
-		if (sum(p.adj[ind0] <= fdr.cutoff) <  pct.cutoff * sum(ind0)) {
+		# Power loss check
+		if (adaptive == 'Overlap') {
+			fdr.cutoff <- 0.2
+			pct.cutoff <- 0.5
 			
-			# Over-adjustment checking
-			cat('Potential over-adjustment! Ordinary permutation-based FDR control will be used!\n')
-			p.adj <- p.adj0
-			k <- NULL
-			rho <- NULL
-			z.adj <- NULL
+			ind0 <- p.adj0 <= fdr.cutoff
+			ind <- p.adj <= fdr.cutoff
+			
+			if (sum(p.adj[ind0] <= fdr.cutoff) <  pct.cutoff * sum(ind0)) {
+				
+				# Over-adjustment checking
+				cat('Potential over-adjustment! Alternative FDR control will be used!\n')
+				p.adj <- p.adj0
+				k <- NULL
+				rho <- NULL
+				z.adj <- NULL
+			}
+		} 
+		
+		if (adaptive == 'Fisher') {
+			# These cutoffs are used emprically
+			fdr.cutoff <- 0.2
+			
+			ind0 <- p.adj0 <= fdr.cutoff
+			ind <- p.adj <= fdr.cutoff
+			
+			n <- nrow(X)
+			test.p <- fisher.test(matrix(c(sum(ind), sum(ind0), n - sum(ind), n - sum(ind0)), 2, 2), alternative = 'less')$p.value
+			
+			if (test.p <= 0.05) {
+				# Over-adjustment checking
+				cat('Potential over-adjustment! Alternative FDR control will be used!\n')
+				p.adj <- p.adj0
+				k <- NULL
+				rho <- NULL
+				z.adj <- NULL
+			} 
 		}
 		
 	}
@@ -404,7 +472,8 @@ GMPR <- function (comm, intersect.no=4, ct.min=1, verbose=FALSE) {
 
 # Data simulation 
 SimulateData <- function (nCases = 50, nControls = 50, nOTU = 400, nCluster = 20, depth = 10000,
-		p.est, theta, scene, signal.strength = 4, otu.no.min = 40, otu.no.max = 80, balanced = FALSE) {
+		p.est, theta, scene = c('S1', 'S2', 'S3', 'S4', 'S5', 'S6'), signal.strength = 4, 
+		otu.no.min = 40, otu.no.max = 80, zero.pct = 0,  balanced = FALSE) {
 	# Input
 	# nCases, nControls: number of cases and controls
 	# nCluster: the number of clusters. nClusters=20, 20, 100, 20, 20 for the five scenarios
@@ -414,7 +483,10 @@ SimulateData <- function (nCases = 50, nControls = 50, nOTU = 400, nCluster = 20
 	# scene: simulation scenarios. S1 , S2 , S3 , S4 , S5 denote five scenarios, respectively.
 	# signal.strength: the strength of signal (related to the mean and sd of the effect sizes).
 	#                  4, 4, 4, 2, 4 for the five scenarios.
+	# zero.pct: the percentage of non-differential OTU - relevant for S1 and S2
 	# Balanced: whether the fold change should be multiplied to both cases/control samples 
+	
+	scene <- match.arg(scene)
 	
 	n <- nCases + nControls        # Number of smaples
 	
@@ -452,9 +524,11 @@ SimulateData <- function (nCases = 50, nControls = 50, nOTU = 400, nCluster = 20
 			iter <- iter + 1
 		}
 		
-		# Generate coefficients
-		beta.true[which(clustering == cluster.ind[1])] <- rnorm(length(which(clustering == cluster.ind[1])), signal.strength, 0)
-		beta.true[which(clustering == cluster.ind[2])] <- rnorm(length(which(clustering == cluster.ind[2])), -signal.strength, 0)
+		nOTU1 <- round(sum(clustering == cluster.ind[1]) * (1 - zero.pct))
+		nOTU2 <- round(sum(clustering == cluster.ind[2]) * (1 - zero.pct))
+		beta.true[sample(which(clustering == cluster.ind[1]), nOTU1)] <- rnorm(nOTU1, signal.strength, 0)
+		beta.true[sample(which(clustering == cluster.ind[2]), nOTU2)] <- rnorm(nOTU2, -signal.strength, 0)
+		
 	}	
 	
 	if (scene == 'S2') {
@@ -467,8 +541,10 @@ SimulateData <- function (nCases = 50, nControls = 50, nOTU = 400, nCluster = 20
 			iter <- iter + 1
 		}
 
-		beta.true[which(clustering == cluster.ind[1])] <- rnorm(length(which(clustering == cluster.ind[1])), signal.strength, 0.5 * signal.strength)
-		beta.true[which(clustering == cluster.ind[2])] <- rnorm(length(which(clustering == cluster.ind[2])), -signal.strength, 0.5 * signal.strength)
+		nOTU1 <- round(sum(clustering == cluster.ind[1]) * (1 - zero.pct))
+		nOTU2 <- round(sum(clustering == cluster.ind[2]) * (1 - zero.pct))
+		beta.true[sample(which(clustering == cluster.ind[1]), nOTU1)] <- rnorm(nOTU1, signal.strength, 0.5 * signal.strength)
+		beta.true[sample(which(clustering == cluster.ind[2]), nOTU2)] <- rnorm(nOTU2, -signal.strength, 0.5 * signal.strength)
 	}		
 	
 	if (scene == 'S3') {
@@ -605,157 +681,10 @@ MicrobiomeSeqTreeFDR <- function (otu.tab, tree, meta.dat, grp.name, adj.name=NU
 		return(list(X=X[, sample(n)], Y=Y))
 	}
 	
-	obj <- TreeFDR(X, NULL, tree, test.func, perm.func, eff.sign=FALSE, B=B, Q1=Q1, Q0=Q0)
+	obj <- TreeFDR(X, NULL, tree, test.func, perm.func, eff.sign=FALSE, alt.FDR = 'Permutation', B=B, Q1=Q1, Q0=Q0)
 
 	return(obj)
 }
 
 
-#require(ape) 
-#require(nlme)
-#require(cluster)
-#require(dirmult)
-#require(StructFDR)
-#
-#
-#
-## Simulation
-#load('~/Dropbox/Workspace/MayoClinic/Methodology/2015_01_12_FDR_Control_Prior_Structure/StructFDR_Package_20070205/StructFDR/data/throat.parameter.rda')
-#
-#data.obj <- SimulateData(nCases=50, nControls=50, nOTU=400, nCluster=20,  depth=10000,
-#		p.est=throat.parameter$p.est, theta=throat.parameter$theta, scene='S5', signal.strength=4)
-#
-#Y <- data.obj$y
-#X <- data.obj$X
-#tree <- data.obj$tree
-#clustering <- data.obj$clustering
-#beta.true <- data.obj$beta.true
-#
-#meta.dat <- data.frame(grp=factor(data.obj$y))
-#
-## Define testing and permutation function
-#test.func <- function (X, Y) { 	
-#	obj <- apply(X, 1, function(x) { 				
-#				p.value <- wilcox.test(x ~ Y)$p.value
-#				e.sign <- sign(diff(tapply(x, Y, mean)))
-#				c(p.value, e.sign) 			
-#			})
-#	return(list(p.value=obj[1, ], e.sign=obj[2, ])) 
-#}
-#
-#perm.func <- function (X, Y) {
-#	return(list(X=X, Y=sample(Y)))
-#}
-#
-## Call TreeFDR
-#tree.fdr.obj <- TreeFDR(X, Y, tree, test.func, perm.func)
-#micro.fdr.obj <- MicrobiomeSeqTreeFDR(sqrt(X), tree, meta.dat, 'grp')
-#
-## Compare TreeFDR and BH
-#tree.p.adj <- tree.fdr.obj$p.adj
-#micro.p.adj <- micro.fdr.obj$p.adj
-#BH.p.adj <- p.adjust(tree.fdr.obj$p.unadj, 'fdr')
-#
-## Empirical FDR and Power at nominal FDR=0.05
-#sum(beta.true != 0)
-#tree.emp.pwr <- sum(tree.p.adj <= 0.05 & beta.true != 0) / sum(beta.true != 0)
-#micro.emp.pwr <- sum(micro.p.adj <= 0.05 & beta.true != 0) / sum(beta.true != 0)
-#BH.emp.pwr <- sum(BH.p.adj <= 0.05 & beta.true != 0) / sum(beta.true != 0)
-#
-#tree.emp.fdr <- sum(tree.p.adj <= 0.05 & beta.true == 0) / sum(tree.p.adj <= 0.05)
-#micro.emp.fdr <- sum(micro.p.adj <= 0.05 & beta.true == 0) / sum(micro.p.adj <= 0.05)
-#BH.emp.fdr <- sum(BH.p.adj <= 0.05 & beta.true == 0) / sum(BH.p.adj <= 0.05)
-#
-#cat('Empirical Power')
-#tree.emp.pwr
-#micro.emp.pwr
-#BH.emp.pwr
-#
-#cat('\nEmpirical FDR')
-#tree.emp.fdr
-#micro.emp.fdr
-#BH.emp.fdr
-#
-## Adjusted statistics vs clustering
-#par(mfrow=c(1, 2))
-#plot(clustering, tree.fdr.obj$z.unadj)
-#plot(clustering, tree.fdr.obj$z.adj)
 
-# Real data
-#load('~/Dropbox/Workspace/MayoClinic/Methodology/2015_01_12_FDR_Control_Prior_Structure/StructFDR_Package_20070205/StructFDR/data/alcohol.rda')
-#set.seed(12345)
-#test.func <- function (X, Y) { 	
-#	obj <- apply(X, 1, function(x) { 				
-#				p.value <- wilcox.test(x ~ Y)$p.value
-#				e.sign <- sign(diff(tapply(x, Y, mean)))
-#				c(p.value, e.sign) 			
-#			})
-#	return(list(p.value=obj[1, ], e.sign=obj[2, ])) 
-#}
-#
-#perm.func <- function (X, Y) {
-#	return(list(X=X, Y=sample(Y)))
-#}
-#X <- alcohol$otu.tab
-#Y <- alcohol$Y
-#tree <- alcohol$tree
-#tree.fdr.obj <- TreeFDR(X = X, Y = Y, tree = tree, test.func = test.func, perm.func = perm.func, B = 100)
-#
-#tree.p.adj <- tree.fdr.obj$p.adj
-#BH.p.adj <- p.adjust(tree.fdr.obj$p.unadj, "fdr")
-#ST.p.adj <- qvalue(tree.fdr.obj$p.unadj)$qvalues
-#
-#sum(tree.p.adj <= 0.1)
-#sum(BH.p.adj <= 0.1)
-#sum(ST.p.adj <= 0.1)
-#
-#alcohol$otu.name[rownames(alcohol$otu.tab)[tree.p.adj <= 0.1], ]
-#
-## Plot the curve
-#dat <- sapply(seq(0.01, 0.2, len=20), function (x) {
-#			c(TreeFDR=sum(tree.p.adj <= x), BH=sum(BH.p.adj <= x), ST=sum(ST.p.adj <= x))
-#		})
-#colnames(dat) <- seq(0.01, 0.2, len=20)
-#dat <- melt(dat)
-#colnames(dat) <- c('Method', 'FDR_cutoff', 'OTU_number')
-#dat$Method <- factor(dat$Method, levels=c('TreeFDR', 'BH', 'ST'))
-#p <- ggplot(dat, aes_string(x='FDR_cutoff', y='OTU_number', group = 'Method', 
-#						shape='Method', linetype='Method')) +
-#		geom_line(size=0.2) +
-#		geom_point(size=3) +
-##		facet_grid(Sparsity~Aboundance,labeller=plot_labeller) +
-#		ylab('Number of differential OTUs') +
-#		xlab('FDR level') +
-#		scale_shape_manual(values=c(15, 1, 2)) +
-#		theme_bw()
-#
-#print(p)
-##ggsave('~/Dropbox/Workspace/MayoClinic/Methodology/2015_01_12_FDR_Control_Prior_Structure/RealData_Alcohol/Alcohol_TreeFDR_OTU_Number.pdf', width=5.5, height=5)
-#
-## Plot tree
-#pdf('~/Dropbox/Workspace/MayoClinic/Methodology/2015_01_12_FDR_Control_Prior_Structure/RealData_Alcohol/Alcohol_TreeFDR_OTU_Tree.pdf', width=5.5, height=5)
-#plot(tree, type = 'fan', edge.color = "gray", cex=0.2,  tip.color = "black", show.tip.label = F, label.offset=0.06)
-#tiplabels(text="", tip=which(tree.p.adj <= 0.1),
-#		frame="n",
-#		pch=4,
-#		col="black")
-#dev.off()
-#
-#pdf('~/Dropbox/Workspace/MayoClinic/Methodology/2015_01_12_FDR_Control_Prior_Structure/RealData_Alcohol/Alcohol_BH_OTU_Tree.pdf', width=5.5, height=5)
-#plot(tree, type = 'fan', edge.color = "gray", cex=0.2,  tip.color = "black", show.tip.label = F, label.offset=0.06)
-#tiplabels(text="", tip=which(BH.p.adj <= 0.1),
-#		frame="n",
-#		pch=4,
-#		col="black")
-#dev.off()
-#
-#pdf('~/Dropbox/Workspace/MayoClinic/Methodology/2015_01_12_FDR_Control_Prior_Structure/RealData_Alcohol/Alcohol_ST_OTU_Tree.pdf', width=5.5, height=5)
-#plot(tree, type = 'fan', edge.color = "gray", cex=0.2,  tip.color = "black", show.tip.label = F, label.offset=0.06)
-#tiplabels(text="", tip=which(ST.p.adj <= 0.1),
-#		frame="n",
-#		pch=4,
-#		col="black")
-#dev.off()
-#
-#save(tree.p.adj, BH.p.adj, ST.p.adj, alcohol, dat,
-#		file='~/Dropbox/Workspace/MayoClinic/Methodology/2015_01_12_FDR_Control_Prior_Structure/RealData_Alcohol/alcohol.res.rda')

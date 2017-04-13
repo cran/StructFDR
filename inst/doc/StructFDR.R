@@ -60,6 +60,18 @@ par(mfrow=c(1, 2))
 plot(clustering, tree.fdr.obj$z.unadj, ylab = 'Unadjusted Z-score')
 plot(clustering, tree.fdr.obj$z.adj, ylab = 'Adjusted Z-score')
 
+## ----simulation3---------------------------------------------------------
+# Generate artificial data
+set.seed(12345)
+data.obj <- SimulateData(nCases = 50, nControls = 50, nOTU = 400, nCluster = 20, 
+		depth = 10000, p.est = throat.parameter$p.est, theta = throat.parameter$theta,
+        scene = 'S1', signal.strength = log(4), zero.pct = 0.1, balance = TRUE)
+Y <- data.obj$y
+X <- data.obj$X 
+tree <-data.obj$tree
+clustering <- data.obj$clustering 
+beta.true <- data.obj$beta.true
+
 ## ----real_data-----------------------------------------------------------
 data(alcohol)
 set.seed(12345)

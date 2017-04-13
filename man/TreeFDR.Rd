@@ -13,7 +13,8 @@ improve the statistical power of detecting associated  bacterial species while c
 }
 \usage{
 TreeFDR(X, Y, tree, test.func, perm.func, eff.sign = TRUE, B = 20, q.cutoff = 0.5,
-       alpha = 1, ...)
+       alpha = 1, adaptive = c('Fisher', 'Overlap'), alt.FDR = c('BH', 'Permutation'), 
+        ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -51,13 +52,22 @@ the number of permutations.  The default is 20. If computation time is not a big
 %%     ~~Describe \code{c.cutoff} here~~
 the quantile cutoff to determine the feature sets to estimate the number of false positives under the null. This cutoff is to protect the signal part of the distributions. The default is 0.5.
 }
-
   \item{alpha}{
 %%     ~~Describe \code{c.cutoff} here~~
-the exponent applied to the distance matrix. Large values have more smoothing effects for closely related species. The default is 1.
+the exponent applied to the distance matrix. Large values have more smoothing effects for closely related species. The default is 1. If the underlying structure assumption is weak, consider
+decrease the value to 0.5.
 }
-
-
+  \item{adaptive}{
+%%     ~~Describe \code{c.cutoff} here~~
+the proposed procedure is most powerful when the signal is shared in a clade.  When this assumption is seriously violated, it loses power.  We provide two heuristic adaptive approaches
+to compensate the power loss in such situations. 'Fisher' approach compares the number of hits by our method to the alternative FDR approach at an FDR of 20\% and uses the alternative FDR approach 
+if the number of hits is significantly less based on Fisher's exact test; 'Overlap' method selects the alternative approach when it fails to identify half of the hits from the alternative approach 
+at an FDR of 20\%. The default is 'Fisher'.
+}
+  \item{alt.FDR}{
+%%     ~~Describe \code{c.cutoff} here~~
+the alternative FDR control used when the proposed approach is powerless. The default is 'BH' procedure and another option is the permutation-based FDR control ('Permutation')
+}
   \item{...}{
 %%     ~~Describe \code{c.cutoff} here~~
 further arguments such as covariates to be passed to \code{test.func}

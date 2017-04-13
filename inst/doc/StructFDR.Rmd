@@ -112,10 +112,29 @@ completely non-informative or even has adverse effects. Finally, 'S5' simulates
 10% differentially abundant OTUs randomly drawn without respect to the
 underlying phylogeny.
 
-We next demonstrate our procedure using a real data set from the study of the
-effects of dietary intake on the gut microbiome composition. We use the alcohol
-intake data to illustrate our method. Use '?alcohol' to see the details of the
-data set.
+To study the effect of within-clade non-differential OTU, we can simulate a
+certain percentage of non-differential OTUs on the basis of 'S1'. This could be
+achieved by using the parameter 'zero.pct' (percentage of non-differential
+OTUs):
+
+
+```{r simulation3}
+# Generate artificial data
+set.seed(12345)
+data.obj <- SimulateData(nCases = 50, nControls = 50, nOTU = 400, nCluster = 20, 
+		depth = 10000, p.est = throat.parameter$p.est, theta = throat.parameter$theta,
+        scene = 'S1', signal.strength = log(4), zero.pct = 0.1, balance = TRUE)
+Y <- data.obj$y
+X <- data.obj$X 
+tree <-data.obj$tree
+clustering <- data.obj$clustering 
+beta.true <- data.obj$beta.true
+```
+
+ We next demonstrate our procedure using a real data set from the
+study of the effects of dietary intake on the gut microbiome composition. We use
+the alcohol intake data to illustrate our method. Use '?alcohol' to see the
+details of the data set.
 
 ```{r real_data} 
 data(alcohol)

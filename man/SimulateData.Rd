@@ -20,7 +20,7 @@ the underlying phyologeny.
 \usage{
 SimulateData(nCases = 50, nControls = 50, nOTU = 400, nCluster = 20, depth = 10000,
 		     p.est, theta, scene, signal.strength = 4, otu.no.min = 40, 
-		     otu.no.max = 80, balanced = FALSE) 
+		     otu.no.max = 80, zero.pct = 0, balanced = FALSE) 
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -34,7 +34,7 @@ the number of OTUs simulated.
 }
   \item{nCluster}{
 %%     ~~Describe \code{X} here~~
-the number of clusters to be clustered. nCluster=20, 20, 100, 20, 20 for the five scenarios.
+the number of clusters to be clustered. 
 }
   \item{depth}{
 %%     ~~Describe \code{tree} here~~
@@ -46,7 +46,7 @@ the parameters (proportion vector and dispersion parameter) of the Dirichlet dis
 }
   \item{scene}{
 %%     ~~Describe \code{perm.func} here~~
-simulation scenarios. 'S1', 'S2', 'S3', 'S4', 'S5' denote five scenarios, respectively.
+simulation scenarios. 'S1', 'S2', 'S3', 'S4', 'S5' denote five scenarios, respectively. 
 }
   \item{signal.strength}{
 %%     ~~Describe \code{eff.sign} here~~
@@ -56,10 +56,14 @@ the strength of signal (related to the mean and sd of the log fold change).
 %%     ~~Describe \code{B} here~~
 the minimum and maximum numbers of differentially abundant OTUs. Defaults are 40 and 80.
 }
+  \item{zero.pct}{
+%%     ~~Describe \code{B} here~~
+the percentage of non-differential OTUs within the cluster/clade. Applicable to 'S1' and 'S2'
+}
   \item{balanced}{
 %%     ~~Describe \code{B} here~~
 a logical value indicating whether the fold changes should be multiplied to cases samples (FALSE, increase/decrease in cases, 
-no change for controls) or to both case and control samples (TRUE, increase in case and control samples). Balanced design will
+no change for controls) only or to both case and control samples (TRUE, increase in case and control samples). Balanced design will
 have similar power for all OTUs.
 }
 
@@ -98,15 +102,15 @@ data(throat.parameter)
 # Scene 1
 data.obj <- SimulateData(nCases = 50, nControls = 50, nOTU = 400, nCluster = 20, 
 		depth = 10000, p.est = throat.parameter$p.est, theta = throat.parameter$theta,
-        scene = 'S1', signal.strength = 2)
+        scene = 'S1', signal.strength = 4)
 # Scene 2
 data.obj <- SimulateData(nCases = 50, nControls = 50, nOTU = 400, nCluster = 20, 
 		depth = 10000, p.est = throat.parameter$p.est, theta = throat.parameter$theta,
-        scene = 'S2', signal.strength = 2)
+        scene = 'S2', signal.strength = 4)
 # Scene 3
 data.obj <- SimulateData(nCases = 50, nControls = 50, nOTU = 400, nCluster = 100, 
 		depth = 10000, p.est = throat.parameter$p.est, theta = throat.parameter$theta,
-        scene = 'S3', signal.strength = 2)
+        scene = 'S3', signal.strength = 4)
 # Scene 4
 data.obj <- SimulateData(nCases = 50, nControls = 50, nOTU = 400, nCluster = 20, 
 		depth = 10000, p.est = throat.parameter$p.est, theta = throat.parameter$theta,
