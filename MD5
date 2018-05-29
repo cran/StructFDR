@@ -1,6 +1,6 @@
-f090318c25dac672d5266fb4f68c921e *DESCRIPTION
+6c70615a23b21ba6403cba13e3ddeb16 *DESCRIPTION
 383016ad0575e465a1a8c5e6daab459b *NAMESPACE
-b3e8d4555100db59f6aae65259ac6101 *R/StructFDR.R
+57b4d51b5d31b2553bfcc08efffb9ef7 *R/StructFDR.R
 69b336f87e3ef6a5080b3b25902d83af *build/vignette.rds
 482c18251c2eea8b0d7b44c2f2e9dae5 *data/alcohol.rda
 bb7386a85a7c5db91efba2f6b7fd4943 *data/throat.parameter.rda
@@ -9,11 +9,11 @@ d6f840a07fe54ea648b4423589bf9125 *inst/doc/StructFDR.R
 9df9a50fa9788ce0f2e140d729ca39ed *inst/doc/StructFDR.html
 04d8082ab6cb50977d0b306accf051aa *man/AdjStats.Rd
 2c1e511474103625de5a4fd0599fc0fc *man/EstHyper.Rd
-543ccaee31508be6a46255cf04464971 *man/MicrobiomeSeqTreeFDR.Rd
+4bf11e8a9507a1b09b0d536371a85e11 *man/MicrobiomeSeqTreeFDR.Rd
 9ced785efa47ebb4e39aa2f3abd0af78 *man/SimulateData.Rd
 6e6fa5fbe5f33fedf209aee209cf73c5 *man/StructFDR-package.Rd
-b71d8fc9b6439d805c2ed979922703ae *man/StructFDR.Rd
-30e67003c637ce5ac879e3040a7b66a6 *man/TreeFDR.Rd
+4231de18a3450ed8fca1e56c57848af3 *man/StructFDR.Rd
+38a7c4d223821f2d2fba9c9822632ceb *man/TreeFDR.Rd
 3b830669d74fc425da6e82ed19a8112c *man/Ztransform.Rd
 50aa1b00b0500f6ebcf4d06aea44b906 *man/alcohol.Rd
 07f90e409a31432291eb46db89f71620 *man/throat.parameter.Rd

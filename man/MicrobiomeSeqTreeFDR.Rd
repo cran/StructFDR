@@ -13,7 +13,7 @@ The function is a wrapper of \code{TreeFDR} with a pre-defined test based on F-s
 }
 \usage{
 MicrobiomeSeqTreeFDR (otu.tab, tree, meta.dat, grp.name, adj.name = NULL, 
-raw.count = FALSE, B = 100)
+raw.count = FALSE, B = 100, ...)
 }
 %- maybe also 'usage' for other objects documented here.
 \arguments{
@@ -49,8 +49,10 @@ The default is FALSE. The user should be responsible for selecting the appropria
 %%     ~~Describe \code{B} here~~
 the number of permutations.  The default is 100 since the permutation test is very fast.
 }
- 
-
+   \item{...}{
+%%     ~~Describe \code{c.cutoff} here~~
+further arguments such as covariates to be passed to \code{TreeFDR}
+}
 }
 
 \value{

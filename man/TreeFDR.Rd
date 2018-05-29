@@ -54,12 +54,12 @@ the quantile cutoff to determine the feature sets to estimate the number of fals
 }
   \item{alpha}{
 %%     ~~Describe \code{c.cutoff} here~~
-the exponent applied to the distance matrix. Large values have more smoothing effects for closely related species. The default is 1. If the underlying structure assumption is weak, consider
-decrease the value to 0.5.
+the exponent applied to the distance matrix. Large values have more smoothing effects for closely related species. The default is 1. If the underlying structure assumption is considered to be very strong, robustness
+can be improved by decreasing the value to 0.5.
 }
   \item{adaptive}{
 %%     ~~Describe \code{c.cutoff} here~~
-the proposed procedure is most powerful when the signal is shared in a clade.  When this assumption is seriously violated, it loses power.  We provide two heuristic adaptive approaches
+the proposed procedure is most powerful when the signal is clustered on the tree.  When this assumption is seriously violated, it loses power.  We provide two heuristic adaptive approaches
 to compensate the power loss in such situations. 'Fisher' approach compares the number of hits by our method to the alternative FDR approach at an FDR of 20\% and uses the alternative FDR approach 
 if the number of hits is significantly less based on Fisher's exact test; 'Overlap' method selects the alternative approach when it fails to identify half of the hits from the alternative approach 
 at an FDR of 20\%. The default is 'Fisher'.

@@ -262,6 +262,10 @@ TreeFDR <- function (X, Y, tree, test.func, perm.func, eff.sign = TRUE,  B = 20,
 # Compute tree-based FDR control	
 StructFDR <- function (X, Y, D, test.func, perm.func, eff.sign = TRUE,  B = 20,  q.cutoff = 0.5, alpha = 1,
 		adaptive = c('Fisher', 'Overlap'), alt.FDR = c('BH', 'Permutation'), ...) {
+	
+	adaptive <- match.arg(adaptive)
+	alt.FDR <- match.arg(alt.FDR)
+	
 	# Make sure the rows of X and tree tips are labeled to avoid error
 	if (is.null(rownames(X)) | is.null(colnames(D))) {
 		warning('Both the data matrix and the distance matrix should have labels (rownames) to avoid potential errors!\n')
@@ -628,7 +632,7 @@ SimulateData <- function (nCases = 50, nControls = 50, nOTU = 400, nCluster = 20
 }			   				   
 
 
-MicrobiomeSeqTreeFDR <- function (otu.tab, tree, meta.dat, grp.name, adj.name=NULL, raw.count=FALSE, B=100) {
+MicrobiomeSeqTreeFDR <- function (otu.tab, tree, meta.dat, grp.name, adj.name=NULL, raw.count=FALSE, B=100, ...) {
 
 	if (raw.count) {
 		size.factor <- GMPR(otu.tab)
@@ -681,7 +685,7 @@ MicrobiomeSeqTreeFDR <- function (otu.tab, tree, meta.dat, grp.name, adj.name=NU
 		return(list(X=X[, sample(n)], Y=Y))
 	}
 	
-	obj <- TreeFDR(X, NULL, tree, test.func, perm.func, eff.sign=FALSE, alt.FDR = 'Permutation', B=B, Q1=Q1, Q0=Q0)
+	obj <- TreeFDR(X, NULL, tree, test.func, perm.func, eff.sign=FALSE, alt.FDR = 'Permutation', B=B, Q1=Q1, Q0=Q0, ...)
 
 	return(obj)
 }
